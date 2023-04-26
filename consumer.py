@@ -1,7 +1,8 @@
 import threading
-from confluent_kafka import Consumer, KafkaError, KafkaException
+from confluent_kafka import Consumer
 from pymongo import MongoClient
-
+import face_recognition
+import pickle
 import cv2
 import numpy as np
 import time
@@ -13,12 +14,10 @@ class ConsumerThread:
         # this consumer meant to take list of kafka
         self.topic = topic_list
         # getting recognizer
-        self.machine_learning = cv2.CascadeClassifier('weight/haarcascade_frontalface_alt_tree.xml')
+        self.detection_method = "hog" # or cnn
         self.employee_list = {}
         self.consumer = Consumer(self.config)
-
-        self.recognizer = cv2.face.LBPHFaceRecognizer_create()
-        self.recognizer.read('weight/trainer.yml')
+        self.encodings = "weight/encodings.pickle"
        
     
     def get_name_from_database(self):
@@ -35,7 +34,7 @@ class ConsumerThread:
         print(self.topic)
         print("consuming data start")
         img = None
-        while True: 
+        while True:
             #fetch data assign to topic
             event = None
             try:
@@ -55,42 +54,64 @@ class ConsumerThread:
                 print("CONSUMING IMAGE")
                 nparr = np.frombuffer(event.value(), np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                # img = event.value()
                 print(type(img))
                 #run on different thread, machine 
-                # self.face_recognition(img)
-                break
-
-        if img is None:
-            print("No face")
-        else:
-            print("Detected a face, recognizing process")
-            self.face_recognition(img)
-        # time.sleep(20)
-    #connect database
+                self.face_recognition(img)
+        
 
     def face_recognition(self,image):
         print("Recognizing a face")
-        gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-        faces = self.machine_learning.detectMultiScale( gray,scaleFactor = 1.2,minNeighbors = 5)
-        print("How many face:", len(faces))
-        for(x,y,w,h) in faces:
-            id, confidence = self.recognizer.predict(gray[y:y+h,x:x+w])
-            print("id is :", id)
-            print("confidence score:",confidence)
-            # If confidence is less them 100 ==> "0" : perfect match 
-            if (confidence < 100):
-                print("Face recognized updating database")
-                id = self.employee_list[id] # data base and stuff
-                self.update_database(id)
-                # confidence = "  {0}%".format(round(100 - confidence))
-            else:
-                print("Stranger Danger")
+        data = pickle.loads(open(self.encodings, "rb").read())
+        # rgb = image
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # detect the (x, y)-coordinates of the bounding boxes corresponding
+        # to each face in the input image, then compute the facial embeddings
+        # for each face
+        print("[INFO] recognizing faces...")
+        boxes = face_recognition.face_locations(rgb,model=self.detection_method)
+        encodings = face_recognition.face_encodings(rgb, boxes)
+        # initialize the list of names for each face detected
+        names = []
+
+
+        # loop over the facial embeddings
+        for encoding in encodings:
+            # attempt to match each face in the input image to our known
+            # encodings
+            matches = face_recognition.compare_faces(data["encodings"], encoding)
+            name = "Unknown"
+
+            # check to see if we have found a match
+            if True in matches:
+                # find the indexes of all matched faces then initialize a
+                # dictionary to count the total number of times each face
+                # was matched
+                matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+                counts = {}
+                # loop over the matched indexes and maintain a count for
+                # each recognized face face
+                for i in matchedIdxs:
+                    name = data["names"][i]
+                    counts[name] = counts.get(name, 0) + 1
+                # determine the recognized face with the largest number of
+                # votes (note: in the event of an unlikely tie Python will
+                # select first entry in the dictionary)
+                name = max(counts, key=counts.get)
+                #supposed that every turn, only one face
+
+            # update the list of names
+            names.append(name)
+            
+            self.update_database(names[0])
+            
 
     def update_database(self, name):
         print("Updating absense employee: ", name)
+        collection = self.db["Employee"]
         myquery = { "name": name}
-        newvalues = { "$set": { "absense": True} }
-        self.db.update_one(myquery, newvalues)
+        newvalues = { "$set": { "absense": True}}
+        collection.update_one(myquery, newvalues)
         print("update database sucessfull")
         
         # kill comsumer after update database

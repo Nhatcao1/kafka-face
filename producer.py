@@ -12,11 +12,10 @@ class ProducerThread:
         self.producer = Producer(config)
         self.topic_name = topic_name
         self.video_path = video_path
-        self.machine_learning = cv2.CascadeClassifier('weight/haarcascade_frontalface_alt_tree.xml')
+        # self.machine_learning = cv2.CascadeClassifier('weight/haarcascade_frontalface_alt_tree.xml')
 
     def publishFrame(self):
         print("RUNNING PUBLISH FRAME")
-        #https://towardsdatascience.com/face-detection-in-2-minutes-using-opencv-python-90f89d7c0f81
         # take single image add feed to consumer for personal detect
         video = cv2.VideoCapture(self.video_path)
         # video_name = os.path.basename(self.video_path).split(".")[0]
@@ -26,32 +25,24 @@ class ProducerThread:
         while video.isOpened():
             _, frame = video.read()
             # print("reading frame")
-            # pushing every 3rd frame, check if there is a face
-            if frame_no % 3 == 0:
-                # we will send this as the fine grain original in jpeg 
-                # light weigth face detect
-                # img = cv2.flip(frame, -1)
-                # print(img)
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = self.machine_learning.detectMultiScale(
-                gray, scaleFactor=1.2, minNeighbors=5)
-                # print("PRODUCER 'S FACES: ", len(faces))
-                if len(faces) > 0:
-                    print("detect a face")
-                    # shoot a single image
-                    try:
-                        self.producer.produce(
-                            topic=self.topic_name,
-                            value=serializeImg(frame),
-                            # value=gray, 
-                            on_delivery= delivery_report, #  heavy
-                        )
-                        self.producer.poll(0) # send with zero time out
-                        print("send to broker")
-                    except Exception as e:
-                        print(e)
+            # pushing every 5rd frame
+            if frame_no % 5 == 0:
+                # shoot a single image
+                try:
+                    self.producer.produce(
+                        topic=self.topic_name,
+                        value=serializeImg(frame),
+                        # value=gray, 
+                        on_delivery= delivery_report, #  heavy
+                    )
+                    self.producer.poll(0) # send with zero time out
+                    print("send to broker")
+                except Exception as e:
+                    print(e)
             time.sleep(0.1)
             frame_no = frame_no + 1
+            if frame_no >= 100: #40 - 100 frame is enough
+                break
         video.release()
         return
         
