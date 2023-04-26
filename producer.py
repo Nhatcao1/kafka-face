@@ -41,8 +41,8 @@ class ProducerThread:
                     print(e)
             time.sleep(0.1)
             frame_no = frame_no + 1
-            if frame_no >= 100: #40 - 100 frame is enough
-                break
+            # if frame_no >= 100: #40 - 100 frame is enough
+            #     break
         video.release()
         return
         

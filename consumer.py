@@ -104,6 +104,8 @@ class ConsumerThread:
             names.append(name)
             
             self.update_database(names[0])
+            #reset names
+            names = []
             
 
     def update_database(self, name):
@@ -115,7 +117,7 @@ class ConsumerThread:
         print("update database sucessfull")
         
         # kill comsumer after update database
-        self.consumer.close()
+        # self.consumer.close()
     
     def start(self, numThreads):
         # Note that number of consumers in a group shouldn't exceed the number of partitions in the topic
@@ -123,6 +125,7 @@ class ConsumerThread:
         #     t = threading.Thread(target=self.read_data)
         #     t.daemon = True
         #     t.start()
+
         while True: 
             self.read_data()
         # 
