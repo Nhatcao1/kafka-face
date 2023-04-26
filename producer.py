@@ -26,6 +26,9 @@ class ProducerThread:
             _, frame = video.read()
             # print("reading frame")
             # pushing every 5rd frame
+            if frame is None: 
+                break
+
             if frame_no % 5 == 0:
                 # shoot a single image
                 try:
