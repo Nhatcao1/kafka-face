@@ -12,7 +12,6 @@ class ProducerThread:
         self.producer = Producer(config)
         self.topic_name = topic_name
         self.video_path = video_path
-        # self.machine_learning = cv2.CascadeClassifier('weight/haarcascade_frontalface_alt_tree.xml')
 
     def publishFrame(self):
         print("RUNNING PUBLISH FRAME")

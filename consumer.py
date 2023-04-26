@@ -115,22 +115,10 @@ class ConsumerThread:
         newvalues = { "$set": { "absense": True}}
         collection.update_one(myquery, newvalues)
         print("update database sucessfull")
-        
-        # kill comsumer after update database
-        # self.consumer.close()
+
     
     def start(self, numThreads):
-        # Note that number of consumers in a group shouldn't exceed the number of partitions in the topic
-        # for _ in range(numThreads):
-        #     t = threading.Thread(target=self.read_data)
-        #     t.daemon = True
-        #     t.start()
-
         while True: 
             self.read_data()
-        # 
 
-    # topic = ["multi-video-stream"]
-    # consumer_thread = ConsumerThread(consumer_config, topic, 32, model, db, videos_map)
-    # consumer_thread.start(3)
 
