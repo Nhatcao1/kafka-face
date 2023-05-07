@@ -1,9 +1,9 @@
 from celery import Celery
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, Producer
 import psycopg2
 from datetime import datetime
 import face_recognition
-from config import consumer_config
+from config import consumer_config,producer_config
 import pickle
 import cv2
 import numpy as np
@@ -16,13 +16,39 @@ conn = psycopg2.connect(
     user="postgres",
     password="123"
 )
+
 pickle_encodings = "weight/encodings.pickle"
+authorization = {}
+
+def get_authorization():
+    cur = conn.cursor()
+    query = "SELECT * FROM your_table"
+    cur.execute(query)
+    # Fetch all rows from the result
+    rows = cur.fetchall()
+    for row in rows:
+        # name, site1, ....
+        authorization[row[0]] = [row[1], row[2], row[3]]
+    cur.close()
+
+
 
 # Create a Celery app
 app = Celery('multi_consumer', broker='amqp://guest@localhost//')
 
+def SingleShotProducer(name, topic, site):
+    producer = Producer(producer_config)
+    message = "UnKnown person"
+    if authorization[name][site - 1]:
+        message = "Employee " + name + "is authorized to site: " + str(site)
+        print(message)
+    
+    # the topic for return channel have _return
+    producer.produce(topic + "_return", value = message)
+    producer.flush()
+    producer.close()
+
 # Task to update PostgreSQL
-# @app.task
 # Function to log entrance event
 def log_entrance_event(employee_name, time_at_entrance, site):
     cursor = conn.cursor()
@@ -33,9 +59,9 @@ def log_entrance_event(employee_name, time_at_entrance, site):
     """
     cursor.execute(insert_query, (employee_name, time_at_entrance, site))
     conn.commit()
+    cursor.close()
     print("Entrance event logged successfully!")
 
-@app.task
 def log_absence(employee_name, absense_status=True):
     cursor = conn.cursor()
     update_query = """
@@ -45,11 +71,10 @@ def log_absence(employee_name, absense_status=True):
     """
     cursor.execute(update_query, (employee_name, absense_status))
     conn.commit()
+    cursor.close()
     print("Absense status updated successfully!")
 
-          
-@app.task
-def process_message(message, site):
+def process_message(message, topic, site):
     # process the message
     nparr = np.frombuffer(message.value(), np.uint8)
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -84,6 +109,7 @@ def process_message(message, site):
             name = max(counts, key=counts.get)
             #supposed that every turn, only one face
     
+    SingleShotProducer(name, topic, site)
     timestamp = datetime.now()
     log_entrance_event(employee_name=name, time_at_entrance=timestamp, site = site)
     log_absence(name)
@@ -96,7 +122,7 @@ def consume_topic1():
     consumer.subscribe(["site_1"])
 
     for message in consumer:
-        process_message.delay(message)
+        process_message.delay(message, "site_1", 1)
 
 @app.task
 def consume_topic2():
@@ -104,7 +130,7 @@ def consume_topic2():
     consumer.subscribe(["site_2"])
 
     for message in consumer:
-        process_message.delay(message)
+        process_message.delay(message, "site_2", 2)
 
 @app.task
 def consume_topic3():
@@ -112,7 +138,7 @@ def consume_topic3():
     consumer.subscribe(["site_3"])
 
     for message in consumer:
-        process_message.delay(message)
+        process_message.delay(message, "site_3", 3)
 
 # Start consuming messages from each topic
 if __name__ == '__main__':
