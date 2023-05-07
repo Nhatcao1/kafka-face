@@ -106,7 +106,6 @@ class ConsumerThread:
             self.update_database(names[0])
             #reset names
             names = []
-            
 
     def update_database(self, name):
         print("Updating absense employee: ", name)
@@ -117,7 +116,7 @@ class ConsumerThread:
         print("update database sucessfull")
 
     
-    def start(self, numThreads):
+    def start(self):
         while True: 
             self.read_data()
 

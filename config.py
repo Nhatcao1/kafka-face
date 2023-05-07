@@ -16,6 +16,7 @@ consumer_config = {
     'group.id': 'face_recognition',
     'enable.auto.commit': False,
     'max.partition.fetch.bytes': 104858800,
+    'auto.offset.reset': 'latest'
     # make consumer reading from start
     # 'default.topic.config': {'auto.offset.reset': 'earliest'}
 }

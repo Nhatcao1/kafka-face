@@ -29,6 +29,13 @@ topics = createTopic(1,3,AdminClient({
 
 topics.add_topic("site_1")
 topics.add_topic("site_2")
+topics.add_topic("site_3")
+
+#trigger
+topics.add_topic("site_1_return")
+topics.add_topic("site_2_return")
+topics.add_topic("site_3_return")
+
 topics.create_topic()
 topics.check_info_topic()
 

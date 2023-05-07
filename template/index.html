@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Employee Absense</title>
+</head>
+<body>
+	<style>
+		th {
+		  padding: 10px;
+		}
+	  </style>
+	  
+	<table>
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>AbsenseStatus</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for record in data %}
+			<tr>
+				<td>{{ record['name'] }}</td>
+				<td>{{ record['absense'] }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</body>
+</html>
