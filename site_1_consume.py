@@ -1,4 +1,3 @@
-from producer import ProducerThread
 from config import consumer_config
 from confluent_kafka import Consumer
 

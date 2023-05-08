@@ -1,4 +1,4 @@
-from celery import Celery
+from celery import Celery, group
 from confluent_kafka import Consumer, Producer
 import psycopg2
 from datetime import datetime
@@ -10,6 +10,7 @@ import numpy as np
 
 # These code will run firse and run once, the rest is celery app and its supporting function
 # Connect to PostgreSQL
+
 conn = psycopg2.connect(
     host="localhost",
     port=5432,
@@ -32,10 +33,11 @@ def getAbsence():
         # name, site1, ....
         absence_status[row[0]] = row[1]
     cur.close()
+    print("Get absense status list")
 
 def get_authorization():
     cur = conn.cursor()
-    query = "SELECT * FROM entrance_log"
+    query = "SELECT * FROM auth"
     cur.execute(query)
     # Fetch all rows from the result
     rows = cur.fetchall()
@@ -43,12 +45,11 @@ def get_authorization():
         # name, site1, ....
         authorization[row[0]] = [row[1], row[2], row[3]]
     cur.close()
-
-get_authorization()
-getAbsence()
+    print("Get auth list")
 
 # Create a Celery app
-app = Celery('multi_consumer', broker='amqp://guest@localhost//')
+app = Celery('celery-consumer', broker='amqp://guest@localhost:5672//')
+# app = Celery('celery-consumer', broker='amqp://guest:guest@rabbitmq:5672//')
 
 def SingleShotProducer(name, topic, site):
     producer = Producer(producer_config)
@@ -135,34 +136,58 @@ def process_message(message, topic, site):
 # Define tasks for each topic
 @app.task
 def consume_topic1():
+    print("Consumer online")
     consumer = Consumer(consumer_config)
     consumer.subscribe(["site_1"])
-
-    for message in consumer:
-        process_message.delay(message, "site_1", 1)
+    while True:
+        try:
+            messages = consumer.poll(0.5)
+            if messages is not None:
+                for message in messages:
+                    process_message(message, "site_1", 1)
+        except Exception as e:
+            print(e)
 
 @app.task
 def consume_topic2():
+    print("Consumer online")
     consumer = Consumer(consumer_config)
     consumer.subscribe(["site_2"])
-
-    for message in consumer:
-        process_message.delay(message, "site_2", 2)
-
+    while True:
+        try:
+            messages = consumer.poll(0.5)
+            if messages is not None:
+                for message in messages:
+                    process_message(message, "site_2", 2)
+        except Exception as e:
+            print(e)
+        
 @app.task
 def consume_topic3():
+    print("Consumer online")
     consumer = Consumer(consumer_config)
     consumer.subscribe(["site_3"])
-
-    for message in consumer:
-        process_message.delay(message, "site_3", 3)
+    while True:
+        try:
+            messages = consumer.poll(0.5)
+            if messages is not None:
+                for message in messages:
+                    process_message(message, "site_3", 3)
+        except Exception as e:
+            print(e)
 
 # Start consuming messages from each topic
 if __name__ == '__main__':
     # app.worker_main(['multi_consumer', '-Q', 'topic1', '-c', '1', '-n', 'topic1_worker'])
     # app.worker_main(['multi_consumer', '-Q', 'topic2', '-c', '1', '-n', 'topic2_worker'])
     # app.worker_main(['multi_consumer', '-Q', 'topic3', '-c', '1', '-n', 'topic3_worker'])
-    app.worker_main(['multi_consumer', '--loglevel=info'])
+    get_authorization()
+    getAbsence()
+    app.worker_main(argv=['worker', '--loglevel=info'])
+    group(consume_topic1.s(), consume_topic2.s(),consume_topic3.s())
+    # consume_topic1.delay()
+    # consume_topic2.delay()
+    # consume_topic3.delay()
 
     #celery -A <your_module_name> worker --loglevel=info
 
