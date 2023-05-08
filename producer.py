@@ -27,9 +27,9 @@ class ProducerThread:
             # pushing every 5rd frame
             if frame is None: 
                 break
-
-            if frame_no % 5 == 0:
+            if frame_no % 10 == 0:
                 # shoot a single image
+                frame = cv2.resize(frame, (150, 150), interpolation = cv2.INTER_AREA)
                 try:
                     self.producer.produce(
                         topic=self.topic_name,
@@ -43,8 +43,6 @@ class ProducerThread:
                     print(e)
             time.sleep(0.1)
             frame_no = frame_no + 1
-            # if frame_no >= 100: #40 - 100 frame is enough
-            #     break
         video.release()
         return
         

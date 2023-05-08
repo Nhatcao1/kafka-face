@@ -122,12 +122,14 @@ def process_message(message, topic, site):
             # select first entry in the dictionary)
             name = max(counts, key=counts.get)
             #supposed that every turn, only one face
-
     
-    SingleShotProducer(name, topic, site)
-    timestamp = datetime.now()
-    log_entrance_event(employee_name=name, time_at_entrance=timestamp, site = site)
-    log_absence(name)
+    if name != "Unknown":
+        if absence_status["name"] == False:
+            absence_status["name"] = True
+            SingleShotProducer(name, topic, site)
+            timestamp = datetime.now()
+            log_entrance_event(employee_name=name, time_at_entrance=timestamp, site = site)
+            log_absence(name)
 
 ####
 # Define tasks for each topic
