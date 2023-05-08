@@ -8,6 +8,7 @@ import pickle
 import cv2
 import numpy as np
 
+# These code will run firse and run once, the rest is celery app and its supporting function
 # Connect to PostgreSQL
 conn = psycopg2.connect(
     host="localhost",
@@ -19,10 +20,22 @@ conn = psycopg2.connect(
 
 pickle_encodings = "weight/encodings.pickle"
 authorization = {}
+absence_status = {}
+
+def getAbsence():
+    cur = conn.cursor()
+    query = "SELECT * FROM absense"
+    cur.execute(query)
+    # Fetch all rows from the result
+    rows = cur.fetchall()
+    for row in rows:
+        # name, site1, ....
+        absence_status[row[0]] = row[1]
+    cur.close()
 
 def get_authorization():
     cur = conn.cursor()
-    query = "SELECT * FROM your_table"
+    query = "SELECT * FROM entrance_log"
     cur.execute(query)
     # Fetch all rows from the result
     rows = cur.fetchall()
@@ -31,7 +44,8 @@ def get_authorization():
         authorization[row[0]] = [row[1], row[2], row[3]]
     cur.close()
 
-
+get_authorization()
+getAbsence()
 
 # Create a Celery app
 app = Celery('multi_consumer', broker='amqp://guest@localhost//')
@@ -108,6 +122,7 @@ def process_message(message, topic, site):
             # select first entry in the dictionary)
             name = max(counts, key=counts.get)
             #supposed that every turn, only one face
+
     
     SingleShotProducer(name, topic, site)
     timestamp = datetime.now()
