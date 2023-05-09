@@ -18,17 +18,19 @@ class ConsumerThread:
 
     ######new_code########
     def SingleShotProducer(self, name, topic):
-        message = "UnKnown person at" + str(self.site_number)
-        print(authorization[name][self.site_number - 1])
-        if authorization[name][self.site_number - 1]:
-            message = "Employee " + name + " is authorized to site: " + str(self.site_number)
-            print(message)
-        
+        message = "Warning! UnKnown person at " + str(self.site_number)
+        # print(authorization[name][self.site_number - 1])
+        if name != "Unknown" and authorization[name][self.site_number - 1]:
+            message = "Employee " + name + " authorized to site: " + str(self.site_number)
+        elif name != "Unknown" and authorization[name][self.site_number - 1] is False:
+            message = "Employee " + name + ". You are not authorized to site: " + str(self.site_number)
+        print(message)
         # the topic for return channel have _return
-        if absence_status[name] == False:
-            producer = Producer(producer_config)
-            producer.produce(topic + "_return", value = message)
-            producer.flush()
+        if name != "Unknown" and absence_status[name] == True:
+            return
+        producer = Producer(producer_config)
+        producer.produce(topic + "_return", value = message)
+        producer.flush()
         # producer.close()
 
     # Task to update PostgreSQL
@@ -69,15 +71,6 @@ class ConsumerThread:
         postgres_conn.commit()
         cursor.close()
         print("Absense status updated successfully!")
-
-    ######old_code########
-    # def get_name_from_database(self):
-    #     collection = self.db["EmployeeID"]
-    #     column_data = collection.find({}, {"id": 1, "name": 1})
-    #     for column in column_data:
-    #         self.employee_list[column["id"]] = column["name"]
-    #     print(self.employee_list)
-        
 
     def read_data(self):
         # consumer subcribe topic list
@@ -153,7 +146,7 @@ class ConsumerThread:
         # names.append(name)
         if len(names) != 0:
             for name in names:
-                if absence_status[name] == False:
+                if absence_status[name] == False or name == "Unknown":
                     print(absence_status[name])
                     print(name)
                     absence_status[name] = True

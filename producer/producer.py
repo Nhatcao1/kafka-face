@@ -30,7 +30,7 @@ class ProducerThread:
                 break
             if frame_no % 10 == 0:
                 # shoot a single image
-                frame = cv2.resize(frame, (150, 150), interpolation = cv2.INTER_AREA)
+                frame = cv2.resize(frame, (1500, 1500), interpolation = cv2.INTER_AREA)
                 try:
                     self.producer.produce(
                         topic=self.topic_name,
@@ -48,11 +48,6 @@ class ProducerThread:
         return
         
     def start(self):
-        # runs until the processes in all the threads are finished
-        # with concurrent.futures.ThreadPoolExecutor() as executor:
-        #     executor.submit(self.publishFrame)
-        #     # executor.map(self.publishFrame, self.video_path)
-
         self.publishFrame()
         self.producer.flush() # push all the remaining messages in the queue
         print("Finished...")
