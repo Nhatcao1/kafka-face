@@ -1,4 +1,5 @@
 from celery import Celery, group
+from celery.bin import worker
 from confluent_kafka import Consumer, Producer
 import psycopg2
 from datetime import datetime
@@ -7,6 +8,7 @@ from config import consumer_config,producer_config
 import pickle
 import cv2
 import numpy as np
+
 
 # These code will run firse and run once, the rest is celery app and its supporting function
 # Connect to PostgreSQL
@@ -48,7 +50,7 @@ def get_authorization():
     print("Get auth list")
 
 # Create a Celery app
-app = Celery('celery-consumer', broker='amqp://guest@localhost:5672//')
+app = Celery('celery-consumer', broker='amqp://guest@localhost:5672//', backend='rpc://')
 # app = Celery('celery-consumer', broker='amqp://guest:guest@rabbitmq:5672//')
 
 def SingleShotProducer(name, topic, site):
@@ -175,6 +177,25 @@ def consume_topic3():
                     process_message(message, "site_3", 3)
         except Exception as e:
             print(e)
+            
+@app.task
+def run_parallel_tasks():
+    # Create a group of tasks
+    task_group = group([consume_topic1.s(), consume_topic2.s(), consume_topic3.s()])
+
+    # Run the tasks in parallel
+    result = task_group.apply_async()
+
+    # Wait for the tasks to complete
+    task_results = result.get()
+
+    for task_result in task_results:
+        if task_result.successful():
+            # Task completed successfully
+            print("Task completed successfully")
+        else:
+            # Task failed
+            print("Task failed")
 
 # Start consuming messages from each topic
 if __name__ == '__main__':
@@ -183,12 +204,20 @@ if __name__ == '__main__':
     # app.worker_main(['multi_consumer', '-Q', 'topic3', '-c', '1', '-n', 'topic3_worker'])
     get_authorization()
     getAbsence()
-    app.worker_main(argv=['worker', '--loglevel=info'])
-    group(consume_topic1.s(), consume_topic2.s(),consume_topic3.s())
+    print(absence_status)
+    print(authorization)
+    # app.worker_main(argv=['worker', '--loglevel=info'])
     # consume_topic1.delay()
     # consume_topic2.delay()
     # consume_topic3.delay()
+    run_parallel_tasks()
 
-    #celery -A <your_module_name> worker --loglevel=info
-
-    # export PATH="/path/to/celery:$PATH"
+    # Start the Celery worker
+    worker.worker(app=app).run(
+        argv=[
+            'worker',
+            '--loglevel=info',
+            '-Q', 'topic1,topic2,topic3',  # Specify the queues to listen on
+            '-c', '1'  # Specify the number of concurrent workers
+        ]
+    )

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Viewer</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Image Viewer</h1>
+        <form action="/image" method="POST" class="mt-4">
+            <div class="form-group">
+                <label for="image_id">Enter Image ID:</label>
+                <input type="text" class="form-control" id="image_id" name="image_id" required>
+            </div>
+            <button type="submit" class="btn btn-primary">View Image</button>
+            <a href="/postgres" class="btn btn-primary">View Entry Log</a>
+        </form>
+    </div>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

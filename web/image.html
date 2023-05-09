@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Viewer</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Image Viewer</h1>
+        {% if image %}
+            <img src="data:image/jpeg;base64,{{ image }}" alt="Image" class="img-fluid mt-4">
+        {% else %}
+            <p class="mt-4">Image not found</p>
+        {% endif %}
+        <a href="/" class="btn btn-primary mt-3">Go Back</a>
+    </div>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

@@ -1,3 +1,6 @@
+import psycopg2
+from pymongo import MongoClient
+
 producer_config = {
     'bootstrap.servers': 'localhost:9092',
     'enable.idempotence': True,
@@ -21,6 +24,25 @@ consumer_config = {
     # 'default.topic.config': {'auto.offset.reset': 'earliest'}
 }
 
-topic_name = {
-    
-}
+#postgres db
+postgres_conn = psycopg2.connect(
+    host="localhost",
+    port=5432,
+    database="postgres",
+    user="postgres",
+    password="123"
+)
+
+#mongodb db
+mongo_db = MongoClient('mongodb://localhost:27017')["test"]
+
+authorization = {'Nhatcao': [True, True, True], 'daniels': [True, False, False], 
+                 'Emma': [True, False, False], 'Gupta': [False, True, False], 
+                 'Kita': [False, True, False]}
+
+absence_status = {'Nhatcao': False, 'daniels': False, 'Emma': False,
+                   'Gupta': False, 'Kita': False}
+
+pickle_encodings = "weight/encodings.pickle"
+
+detection_method = "hog" #cnn
