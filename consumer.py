@@ -1,5 +1,4 @@
 from confluent_kafka import Consumer, Producer
-from bson.binary import Binary
 import face_recognition
 import pickle
 import cv2
@@ -19,7 +18,6 @@ class ConsumerThread:
 
     ######new_code########
     def SingleShotProducer(self, name, topic):
-        producer = Producer(producer_config)
         message = "UnKnown person at" + str(self.site_number)
         print(authorization[name][self.site_number - 1])
         if authorization[name][self.site_number - 1]:
@@ -27,8 +25,10 @@ class ConsumerThread:
             print(message)
         
         # the topic for return channel have _return
-        producer.produce(topic + "_return", value = message)
-        # producer.flush()
+        if absence_status[name] == False:
+            producer = Producer(producer_config)
+            producer.produce(topic + "_return", value = message)
+            producer.flush()
         # producer.close()
 
     # Task to update PostgreSQL
@@ -36,25 +36,24 @@ class ConsumerThread:
     def log_entrance_event(self, employee_name, time_at_entrance, image):
         #upgrade MongoDB
         mongodb_id = employee_name + "_" + str(time_at_entrance) + "_site" + str(self.site_number)
-        print(mongo_db)
-        # Read the image file
-        # with open(image, 'rb') as image_file:
-        #     image_data = image_file.read()
-        
+        mongo_image = fs.put(image.tostring(), encoding='utf-8') # store image to fs
+
         document = {
             'image_id': mongodb_id,
-            'image': Binary(image) # a readed image
+            'image': mongo_image, #image metadata
+            'shape': image.shape
         }
+
         mongo_db["image_store"].insert_one(document)
 
         ####update postgres
         cursor = postgres_conn.cursor()
         # timestamp = datetime.now()
         insert_query = """
-        INSERT INTO entrance_log (employee_name, time_at_entrance, site)
-        VALUES (%s, %s, %s);
+        INSERT INTO entrance_log (employee_name, time_at_entrance, site, unique_id_link)
+        VALUES (%s, %s, %s, %s);
         """
-        cursor.execute(insert_query, (employee_name, time_at_entrance, self.site_number))
+        cursor.execute(insert_query, (employee_name, time_at_entrance, self.site_number, mongodb_id))
         postgres_conn.commit()
         cursor.close()
         print("Entrance event logged successfully!")
@@ -83,7 +82,6 @@ class ConsumerThread:
     def read_data(self):
         # consumer subcribe topic list
         self.consumer.subscribe(self.topic)
-        print(self.topic)
         print("consuming data start")
         print(self.topic)
         img = None
@@ -103,7 +101,7 @@ class ConsumerThread:
                 continue
             elif event.error()==None:
                 #DO AI STUFF HERE, and get label stuff, I am so tired
-                # print("CONSUMING IMAGE")
+                print("CONSUMING IMAGE")
                 nparr = np.frombuffer(event.value(), np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 # img = event.value()
@@ -163,3 +161,5 @@ class ConsumerThread:
                     timestamp = datetime.datetime.now()
                     self.log_entrance_event(employee_name=name, time_at_entrance=timestamp, image = rgb)
                     self.log_absence(employee_name=name)
+
+# https://stackoverflow.com/questions/49493493/python-store-cv-image-in-mongodb-gridfs

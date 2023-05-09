@@ -1,5 +1,6 @@
 import psycopg2
 from pymongo import MongoClient
+import gridfs
 
 producer_config = {
     'bootstrap.servers': 'localhost:9092',
@@ -35,6 +36,7 @@ postgres_conn = psycopg2.connect(
 
 #mongodb db
 mongo_db = MongoClient('mongodb://localhost:27017')["test"]
+fs = gridfs.GridFS(mongo_db)
 
 authorization = {'Nhatcao': [True, True, True], 'daniels': [True, False, False], 
                  'Emma': [True, False, False], 'Gupta': [False, True, False], 
