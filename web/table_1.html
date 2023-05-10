@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Table Viewer</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Message Log Site 1</h1>
+        <a href="/" class="btn btn-primary mb-3">Go Back</a>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Log Message</th>
+                    <!-- Add more column headings here -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <!-- Add more column data here -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -15,19 +15,23 @@ class ConsumerThread:
         self.employee_list = {}
         self.consumer = Consumer(self.config)
         self.site_number = site_number
+        self.absence_status = absence_status
+        self.authorization = authorization
+        self.true_false = False # don't recognise face then recognise
 
     ######new_code########
     def SingleShotProducer(self, name, topic):
         message = "Warning! UnKnown person at " + str(self.site_number)
-        # print(authorization[name][self.site_number - 1])
-        if name != "Unknown" and authorization[name][self.site_number - 1]:
+        print(message)
+        if name != "Unknown" and self.authorization[name][self.site_number - 1]:
             message = "Employee " + name + " authorized to site: " + str(self.site_number)
-        elif name != "Unknown" and authorization[name][self.site_number - 1] is False:
+        elif name != "Unknown" and self.authorization[name][self.site_number - 1] is False:
             message = "Employee " + name + ". You are not authorized to site: " + str(self.site_number)
         print(message)
         # the topic for return channel have _return
-        if name != "Unknown" and absence_status[name] == True:
+        if name != "Unknown" and self.absence_status[name] == True:
             return
+        self.absence_status[name] = True
         producer = Producer(producer_config)
         producer.produce(topic + "_return", value = message)
         producer.flush()
@@ -146,13 +150,15 @@ class ConsumerThread:
         # names.append(name)
         if len(names) != 0:
             for name in names:
-                if absence_status[name] == False or name == "Unknown":
-                    print(absence_status[name])
-                    print(name)
-                    absence_status[name] = True
-                    self.SingleShotProducer(name, self.topic[0])
+                if self.absence_status[name] == False:
+                    # self.absence_status[name] = True
+                    self.true_false = False
                     timestamp = datetime.datetime.now()
                     self.log_entrance_event(employee_name=name, time_at_entrance=timestamp, image = rgb)
                     self.log_absence(employee_name=name)
+                    self.SingleShotProducer(name, self.topic[0])
+        elif self.true_false == False:
+            self.true_false = True
+            self.SingleShotProducer("Unknown", self.topic[0])
 
 # https://stackoverflow.com/questions/49493493/python-store-cv-image-in-mongodb-gridfs

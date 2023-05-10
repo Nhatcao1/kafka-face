@@ -42,18 +42,6 @@ def show_image(image):
     # else:
     #     return None
 
-# def show_image(image):
-#     # if image:
-#     img = Image.fromarray(image)
-#     # img = image
-#     if img.mode != 'RGB':
-#         img = img.convert('RGB')
-#     img_plot = plt.imread(img, format='jpg')
-#     print("ploting image")
-#     return img_plot
-#     # else:
-#     #     return None
-
 @app.route('/')
 def home():
     return render_template('get_image.html')
@@ -85,6 +73,92 @@ def display_table():
         except psycopg2.Error as e:
             conn.rollback()
     return render_template('table.html', rows=results)
+
+@app.route('/site1')
+def display_table_1():
+    # Connect to the PostgreSQL database
+    results = None
+    with conn:
+        try:
+            with conn.cursor() as cur:
+        # Execute a query to fetch data from the table
+                cur.execute('SELECT * FROM log_site_1')
+
+                # Fetch all rows from the result set
+                results = cur.fetchall()
+                conn.commit()
+                # Close the database connection
+                cur.close()
+
+                # Render the template with the data
+        except psycopg2.Error as e:
+            conn.rollback()
+    return render_template('table_1.html', rows=results)
+
+@app.route('/site2')
+def display_table_2():
+    # Connect to the PostgreSQL database
+    results = None
+    with conn:
+        try:
+            with conn.cursor() as cur:
+        # Execute a query to fetch data from the table
+                cur.execute('SELECT * FROM log_site_2')
+
+                # Fetch all rows from the result set
+                results = cur.fetchall()
+                conn.commit()
+                # Close the database connection
+                cur.close()
+
+                # Render the template with the data
+        except psycopg2.Error as e:
+            conn.rollback()
+    return render_template('table_2.html', rows=results)
+
+@app.route('/site3')
+def display_table_3():
+    # Connect to the PostgreSQL database
+    results = None
+    with conn:
+        try:
+            with conn.cursor() as cur:
+        # Execute a query to fetch data from the table
+                cur.execute('SELECT * FROM log_site_3')
+
+                # Fetch all rows from the result set
+                results = cur.fetchall()
+                conn.commit()
+                # Close the database connection
+                cur.close()
+
+                # Render the template with the data
+        except psycopg2.Error as e:
+            conn.rollback()
+    return render_template('table_3.html', rows=results)
+
+@app.route('/abs')
+def abs():
+    # Connect to the PostgreSQL database
+    results = None
+    with conn:
+        try:
+            with conn.cursor() as cur:
+        # Execute a query to fetch data from the table
+                cur.execute('SELECT * FROM absense')
+
+                # Fetch all rows from the result set
+                results = cur.fetchall()
+                conn.commit()
+                # Close the database connection
+                cur.close()
+
+                # Render the template with the data
+        except psycopg2.Error as e:
+            conn.rollback()
+    return render_template('abs.html', rows=results)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
