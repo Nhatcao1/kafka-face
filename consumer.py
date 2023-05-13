@@ -22,12 +22,12 @@ class ConsumerThread:
     ######new_code########
     def SingleShotProducer(self, name, topic):
         message = "Warning! UnKnown person at " + str(self.site_number)
-        print(message)
+        # print(message)
         if name != "Unknown" and self.authorization[name][self.site_number - 1]:
             message = "Employee " + name + " authorized to site: " + str(self.site_number)
         elif name != "Unknown" and self.authorization[name][self.site_number - 1] is False:
             message = "Employee " + name + ". You are not authorized to site: " + str(self.site_number)
-        print(message)
+        # print(message)
         # the topic for return channel have _return
         if name != "Unknown" and self.absence_status[name] == True:
             return
@@ -40,6 +40,8 @@ class ConsumerThread:
     # Task to update PostgreSQL
     # Function to log entrance event
     def log_entrance_event(self, employee_name, time_at_entrance, image):
+        if self.authorization[employee_name][self.site_number - 1] is False:
+            return
         #upgrade MongoDB
         mongodb_id = employee_name + "_" + str(time_at_entrance) + "_site" + str(self.site_number)
         mongo_image = fs.put(image.tostring(), encoding='utf-8') # store image to fs
@@ -64,7 +66,9 @@ class ConsumerThread:
         cursor.close()
         print("Entrance event logged successfully!")
 
-    def log_absence(self, employee_name, absense_status=True):
+    def log_absence(self, employee_name, absense_status=False):
+        if self.authorization[employee_name][self.site_number - 1] is False:
+            return
         cursor = postgres_conn.cursor()
         update_query = """
         UPDATE absense
@@ -162,3 +166,8 @@ class ConsumerThread:
             self.SingleShotProducer("Unknown", self.topic[0])
 
 # https://stackoverflow.com/questions/49493493/python-store-cv-image-in-mongodb-gridfs
+
+
+# UPDATE absense
+# SET absense_status = True
+# WHERE employee_name = "Nhatcao";
