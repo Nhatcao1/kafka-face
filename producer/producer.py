@@ -2,6 +2,7 @@ from confluent_kafka import Producer
 import cv2
 import numpy as np
 import time
+import random
 
 import sys
 sys.path.append('/Users/nhatcao/multi-topics-video-stream')
@@ -15,7 +16,7 @@ class ProducerThread:
         self.video_path = video_path
 
     def publishFrame(self):
-        print("RUNNING PUBLISH FRAME")
+        print("getting face at site ", self.topic_name)
         # take single image add feed to consumer for personal detect
         video = cv2.VideoCapture(self.video_path)
         # video_name = os.path.basename(self.video_path).split(".")[0]
@@ -32,10 +33,11 @@ class ProducerThread:
                 # shoot a single image
                 frame = cv2.resize(frame, (1500, 1500), interpolation = cv2.INTER_AREA)
                 try:
+                    pick_partition = random.randint(0, 2)  # Randomly select a partition (0, 1, or 2)
                     self.producer.produce(
                         topic=self.topic_name,
                         value=serializeImg(frame),
-                        # value=gray, 
+                        partition = pick_partition, 
                         on_delivery= delivery_report, #  heavy
                     )
                     self.producer.poll(0) # send with zero time out
