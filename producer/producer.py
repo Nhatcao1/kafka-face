@@ -37,6 +37,7 @@ class ProducerThread:
                     self.producer.produce(
                         topic=self.topic_name,
                         value=serializeImg(frame),
+                        headers = [('original_topic', self.topic_name)],
                         partition = pick_partition, 
                         on_delivery= delivery_report, #  heavy
                     )

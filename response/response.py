@@ -4,8 +4,7 @@ from multiprocessing import Process, freeze_support
 from confluent_kafka import KafkaException, Consumer
 from config import *
 
-def consume_messages(topic):
-
+def consume_messages(topic, site_number):
     consumer = Consumer(consumer_config)
     consumer.subscribe([topic])
     print(f"Subscribed to topic: {topic}")
@@ -24,10 +23,10 @@ def consume_messages(topic):
             # Process the received message
             log = msg.value().decode('utf-8')
             print(f"Received message from topic {topic}: {log}")
-
+            site = "log_site_" + str(site_number)
             # Insert log into PostgreSQL
             cursor = postgres_conn.cursor()
-            insert_query = "INSERT INTO log_site_1 (log) VALUES (%s);"
+            insert_query = f"INSERT INTO {site} (log) VALUES (%s);"
             cursor.execute(insert_query, (log,))
             postgres_conn.commit()
             cursor.close()
@@ -41,9 +40,9 @@ if __name__ == '__main__':
 
     # Create and start consumer processes
     consumer_processes = [
-        Process(target=consume_messages, args=("site_1_return",)),
-        Process(target=consume_messages, args=("site_2_return",)),
-        Process(target=consume_messages, args=("site_3_return",))
+        Process(target=consume_messages, args=("site_1_return", 1)),
+        Process(target=consume_messages, args=("site_2_return", 2)),
+        Process(target=consume_messages, args=("site_3_return", 3))
     ]
 
     for consumer_process in consumer_processes:

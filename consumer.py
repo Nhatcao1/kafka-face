@@ -1,32 +1,31 @@
 from confluent_kafka import Consumer, Producer
 import face_recognition
 import pickle
-import cv2
+import cv2, re
 import numpy as np
 from config import *
 import datetime
 
 class ConsumerThread:
-    def __init__(self, config, topic_list, site_number):
+    def __init__(self, config, topic_list):
         self.config = config
         # this consumer meant to take list of kafka
         self.topic = topic_list
         # getting recognizer
         self.employee_list = {}
         self.consumer = Consumer(self.config)
-        self.site_number = site_number
         self.absence_status = absence_status
         self.authorization = authorization
         self.true_false = False # don't recognise face then recognise
 
     ######new_code########
-    def SingleShotProducer(self, name, topic):
-        message = "Warning! UnKnown person at " + str(self.site_number)
+    def SingleShotProducer(self, name, topic, site_number):
+        message = "Warning! UnKnown person at " + topic
         # print(message)
-        if name != "Unknown" and self.authorization[name][self.site_number - 1]:
-            message = "Employee " + name + " authorized to site: " + str(self.site_number)
-        elif name != "Unknown" and self.authorization[name][self.site_number - 1] is False:
-            message = "Employee " + name + ". You are not authorized to site: " + str(self.site_number)
+        if name != "Unknown" and self.authorization[name][site_number - 1]:
+            message = "Employee " + name + " authorized to site: " + str(site_number)
+        elif name != "Unknown" and self.authorization[name][site_number - 1] is False:
+            message = "Employee " + name + ". You are not authorized to site: " + str(site_number)
         # print(message)
         # the topic for return channel have _return
         if name != "Unknown" and self.absence_status[name] == True:
@@ -39,11 +38,11 @@ class ConsumerThread:
 
     # Task to update PostgreSQL
     # Function to log entrance event
-    def log_entrance_event(self, employee_name, time_at_entrance, image):
-        if self.authorization[employee_name][self.site_number - 1] is False:
+    def log_entrance_event(self, employee_name, time_at_entrance, image, site_number):
+        if self.authorization[employee_name][site_number - 1] is False:
             return
         #upgrade MongoDB
-        mongodb_id = employee_name + "_" + str(time_at_entrance) + "_site" + str(self.site_number)
+        mongodb_id = employee_name + "_" + str(time_at_entrance) + "_site" + str(site_number)
         mongo_image = fs.put(image.tostring(), encoding='utf-8') # store image to fs
 
         document = {
@@ -61,13 +60,13 @@ class ConsumerThread:
         INSERT INTO entrance_log (employee_name, time_at_entrance, site, unique_id_link)
         VALUES (%s, %s, %s, %s);
         """
-        cursor.execute(insert_query, (employee_name, time_at_entrance, self.site_number, mongodb_id))
+        cursor.execute(insert_query, (employee_name, time_at_entrance, site_number, mongodb_id))
         postgres_conn.commit()
         cursor.close()
         print("Entrance event logged successfully!")
 
-    def log_absence(self, employee_name, absense_status=False):
-        if self.authorization[employee_name][self.site_number - 1] is False:
+    def log_absence(self, employee_name, site_number, absense_status=False):
+        if self.authorization[employee_name][site_number - 1] is False:
             return
         cursor = postgres_conn.cursor()
         update_query = """
@@ -108,10 +107,22 @@ class ConsumerThread:
                 # img = event.value()
                 # print(type(img))
                 #run on different thread, machine 
-                self.face_recognition(img)
+                headers = event.headers()
+                original = headers[0][1].decode('utf-8')
+                self.face_recognition(img,original)
         
+    def extract_number(self, string):
+        # Use regular expression to find the number at the end of the string
+        match = re.search(r'\d+$', string)
 
-    def face_recognition(self,image):
+        if match:
+            return int(match.group())
+
+        # Return None if no number is found
+        return None
+
+    def face_recognition(self,image, original_site):
+        site_number = self.extract_number(original_site)
         # print("Recognizing a face")
         data = pickle.loads(open(pickle_encodings, "rb").read())
         # rgb = image
@@ -151,19 +162,18 @@ class ConsumerThread:
                 names.append(name)
 
         # update the list of names
-        # names.append(name)
         if len(names) != 0:
             for name in names:
                 if self.absence_status[name] == False:
                     # self.absence_status[name] = True
                     self.true_false = False
                     timestamp = datetime.datetime.now()
-                    self.log_entrance_event(employee_name=name, time_at_entrance=timestamp, image = rgb)
-                    self.log_absence(employee_name=name)
-                    self.SingleShotProducer(name, self.topic[0])
+                    self.log_entrance_event(employee_name=name, time_at_entrance=timestamp, image = rgb, site_number=site_number)
+                    self.log_absence(employee_name=name, site_number=site_number)
+                    self.SingleShotProducer(name, original_site, site_number=site_number)
         elif self.true_false == False:
             self.true_false = True
-            self.SingleShotProducer("Unknown", self.topic[0])
+            self.SingleShotProducer("Unknown", original_site, site_number=site_number)
 
 # https://stackoverflow.com/questions/49493493/python-store-cv-image-in-mongodb-gridfs
 
