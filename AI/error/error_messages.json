@@ -1,0 +1,28 @@
+{
+  "UNAUTHORIZED": "Unauthorized",
+  "UNEXPECTED_ERROR": "Unexpected error",
+
+  "INVALID_FILE_SIZE": "The image base64 string must not be empty or larger than 2MB",
+  "INVALID_NUMBER_OF_FACE": "Invalid number of faces in image index = {}. Number of face = {}.",
+  "IMAGE_EXISTS": "Image with index = {} is exists",
+  "INVALID_IMAGE_TYPE": "Make sure the image is in the correct format. Support .jpg, .jpeg, .png, .webp",
+
+  "FACESET_NOTFOUND": "Faceset: {} cannot be found",
+  "FACESET_NAME_EXISTS": "faceset_name: {} already existed",
+  "INVALID_FACESET_NAME": "Invalid faceset_name: {}. Maximum 256 characters, only alphabet, number, - and _ are allowed",
+
+  "FACE_TOKEN_EXISTS": "face_token: {} exists in the faceset",
+  "FACE_TOKEN_NOTFOUND": "face_token: {} cannot be found",
+  "BAD_QUALITY": "Image contains bad quality face (containing side/rotated face)",
+  "INVALID_USER_ID": "Invalid user_id: {}. Maximum 256 characters, only alphabet, number, - and _ are allowed",
+
+  "SOURCE_URL_EXISTED": "Source url exited: {}, please stop source using RemoveSource and try again",
+  "INVALID_WEBSOCKET_SOURCE_URL": "Invalid websocket source url: {}",
+
+  "CANNOT_READ_STREAM": "Cannot read stream, please check connection and ensure that stream is running",
+
+  "INVALID_THRESHOLD_TIME": "Time cannot not exceed 7 days",
+  "INVALID_TIMESTAMP": "Invalid StartTime/EndTime, please make sure EndTime > StartTime, EndTime < now, StartTime < now",
+  "INVALID_SOURCE": "List source is empty",
+  "MISSING_ARGUMENTS": "Some arguments are missing from the inputs, please recheck inputs"
+}

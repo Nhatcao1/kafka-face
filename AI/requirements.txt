@@ -1,0 +1,19 @@
+filterpy==1.4.5
+scikit-image==0.17.2
+pymilvus==1.1.1
+aiosql >= 3.3.1
+asyncpg >= 0.24.0
+tritonclient==2.12.0
+Shapely==1.8.0
+opencv-python==4.4.0.46
+kafka-python==2.0.2
+minio==7.1.1
+celery==5.1.2
+SQLAlchemy==1.4.20
+pymysql==1.0.2
+deepdiff==5.6.0
+psycopg2-binary==2.9.1
+pydantic==1.8.2
+requests==2.26.0
+Pillow==8.3.2
+unidecode
