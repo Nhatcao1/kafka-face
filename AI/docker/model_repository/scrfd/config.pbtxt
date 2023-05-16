@@ -1,0 +1,68 @@
+name: "scrfd"
+platform: "onnxruntime_onnx"
+max_batch_size : 0
+input [
+  {
+    name: "input.1",
+    data_type: TYPE_FP32,
+    format: FORMAT_NONE,
+    dims: [1,3,640,640],
+    is_shape_tensor: false,
+    allow_ragged_batch: false
+  }
+]
+output [
+  {
+    name: "446"
+    data_type: TYPE_FP32
+    dims:[12800,1]
+  },
+  {
+    name: "466"
+    data_type: TYPE_FP32
+    dims:[3200,1]
+  },
+  {
+    name: "486"
+    data_type: TYPE_FP32
+    dims:[800,1]
+  },
+  {
+    name: "449"
+    data_type: TYPE_FP32
+    dims:[12800,4]
+  },
+  {
+    name: "469"
+    data_type: TYPE_FP32
+    dims:[3200,4]
+  },
+  {
+    name: "489"
+    data_type: TYPE_FP32
+    dims:[800,4]
+  },
+  {
+    name: "452"
+    data_type: TYPE_FP32
+    dims:[12800,10]
+  },
+  {
+    name: "472"
+    data_type: TYPE_FP32
+    dims:[3200,10]
+  },
+  {
+    name: "492"
+    data_type: TYPE_FP32
+    dims:[800,10]
+  }
+]
+
+optimization { execution_accelerators {
+  gpu_execution_accelerator : [ {
+    name : "tensorrt"
+    parameters { key: "precision_mode" value: "FP16" }
+    parameters { key: "max_workspace_size_bytes" value: "1073741824" }
+    }]
+}}

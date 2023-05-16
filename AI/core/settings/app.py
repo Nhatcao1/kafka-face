@@ -8,7 +8,7 @@ from core.settings.base import BaseAppSettings
 class AppSettings(BaseAppSettings):
     debug: bool = False
 
-    database_url: PostgresDsn = "postgresql://postgres:changeme@10.255.187.47:5432/face_management"
+    database_url: PostgresDsn = "postgresql://postgres:changeme@localhost:5432/face_management"
     max_connection_count: int = 10
     min_connection_count: int = 10
 

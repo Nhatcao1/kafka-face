@@ -20,7 +20,7 @@ class FaceManagementService:
 
     def get_person_id_from_face_token(self, face_token: str, db_connection: AbstractConnectionPool) -> str:
         return get_person_id_from_face_token(connection=db_connection, face_token=face_token)
-    
+
     def get_image_url_from_face_token(self, face_token: str, db_connection: AbstractConnectionPool) -> str:
         return get_image_url_from_face_token(connection=db_connection, face_token=face_token)
 
@@ -32,9 +32,10 @@ class FaceManagementService:
             db_connection: AbstractConnectionPool,
     ) -> None:
         feature_vectors = np.array([face_info.feature_vector for face_info in face_info_list]).astype(np.float32)
+
         self.feature_vector_service.create_collection(
-                collection_name=faceset_token
-            )
+            collection_name=faceset_token
+        )
         try:
             id_array, distance_array = self.feature_vector_service.search(
                 query_vectors=feature_vectors,
@@ -53,7 +54,8 @@ class FaceManagementService:
             return
         distance_threshold = self.settings.distance_threshold
         if np.array(distance_array).shape in (0, 1):
-            logger.error("Bug code: expect distances with shape (N, ) or a scalar, but got: {}".format(distance_array.shape))
+            logger.error(
+                "Bug code: expect distances with shape (N, ) or a scalar, but got: {}".format(distance_array.shape))
             raise InternalException(error_code.UNEXPECTED_ERROR)
         distances = np.sqrt(distance_array)
         distances[distances == 0] = distance_threshold
@@ -77,7 +79,9 @@ class FaceManagementService:
             partition_tag=partition_tag
         )
 
-    def add_face_tokens_to_faceset(self, face_tokens: List[str], feature_vectors: List[List[float]], faceset_token: str):
+    def add_face_tokens_to_faceset(self, face_tokens: List[str], feature_vectors: List[List[float]],
+                                   faceset_token: str):
+        # self.feature_vector_service.remove_collection(collection_name=faceset_token)
         self.feature_vector_service.insert_vectors(
             vectors=feature_vectors,
             ids=[int(face_token) for face_token in face_tokens],
@@ -98,8 +102,8 @@ class FaceManagementService:
             feature_vector: List[float]
     ) -> Tuple[List[str], np.ndarray]:
         self.feature_vector_service.create_collection(
-                collection_name=faceset_token
-            )
+            collection_name=faceset_token
+        )
         ids, distance_arrays = self.feature_vector_service.search(
             query_vectors=np.array([feature_vector]).astype(np.float32),
             top_k=top_k,
@@ -107,11 +111,13 @@ class FaceManagementService:
             partition_tags=partition_tags
         )
         if np.array(distance_arrays).shape in (0, 1):
-            logger.error("Bug code: expect distances with shape (N, ) or a scalar, but got: {}".format(distance_arrays.shape))
+            logger.error(
+                "Bug code: expect distances with shape (N, ) or a scalar, but got: {}".format(distance_arrays.shape))
             raise InternalException(error_code.UNEXPECTED_ERROR)
         distances = np.sqrt(distance_arrays)
         distances[distances == 0] = self.settings.distance_threshold
-        similarity_scores = np.minimum(100, np.where(distances > 0, 100 * float(self.settings.distance_threshold) / distances, 100))
+        similarity_scores = np.minimum(100, np.where(distances > 0,
+                                                     100 * float(self.settings.distance_threshold) / distances, 100))
         return ids, similarity_scores
 
     def is_faceset_token_exists(self, faceset_name: str):

@@ -35,9 +35,9 @@ def detect_faces(image: np.array, upload_cropped_image=False, base_crop_image_pa
         base_image_path=base_crop_image_path,
         verify=True)
     if len(detected_faces) < 1:
-        # logger.info("No face found")
-        logger.info(log_message)
-        logger.info("----------------------------------------------")
+        # print("No face found")
+        print(log_message)
+        print("----------------------------------------------")
         return [], log_message
 
     # STEP 2: get feature vectors from detection result
@@ -78,7 +78,7 @@ def analyze_video():
         )
         frame_height, frame_width, _ = frame.shape
 
-        logger.info(len(detected_faces))
+        print(len(detected_faces))
         # db_connection = db_pool.getconn()
         face_image_service.recognition_detected_faces(
             frame=frame,

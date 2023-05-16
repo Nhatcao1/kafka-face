@@ -34,9 +34,9 @@ List[FaceInfo], str):
         upload_cropped_image=upload_cropped_image,
         base_image_path=base_crop_image_path)
     if len(detected_faces) < 1:
-        # logger.info("No face found")
-        logger.info(log_message)
-        logger.info("----------------------------------------------")
+        # print("No face found")
+        print(log_message)
+        print("----------------------------------------------")
         return [], log_message
 
     # STEP 2: get feature vectors from detection result
@@ -44,19 +44,20 @@ List[FaceInfo], str):
     return detected_faces, log_message
 
 
-cap = cv2.VideoCapture("test.mp4")
+cap = cv2.VideoCapture("daniels.mp4")
 # out = cv2.VideoWriter('cam_8_toi.avi',
 #                       cv2.VideoWriter_fourcc(*'MJPG'),
 #                       35, (1280, 720))
-# db_pool = psycopg2.pool.ThreadedConnectionPool(
-#     settings.min_connection_count,
-#     settings.max_connection_count,
-#     str(settings.database_url)
-# )
+db_pool = psycopg2.pool.ThreadedConnectionPool(
+    settings.min_connection_count,
+    settings.max_connection_count,
+    "postgresql://postgres:changeme@localhost:5432/face_management"
+)
+db_connection = db_pool.getconn()
 face_image_service = FaceImageService()
 recognition_threshold = 75
 detection_threshold = 60
-faceset_token = "_c211a43996114ae0b5f39ba3eba973f"
+faceset_token = "_c3770594291f452782520613dfeaa6c"
 tracker = Sort(max_age=3, min_hits=0, max_distance=0.82,
                recognition_threshold=0.75)
 
@@ -71,22 +72,22 @@ while True:
     detected_faces, log_message = face_image_service.detect_faces(
         image=frame,
         detection_threshold=detection_threshold,
-        upload_cropped_image=True,
+        upload_cropped_image=False,
         base_image_path="test"
     )
     frame_height, frame_width, _ = frame.shape
 
-    logger.info(len(detected_faces))
-    # db_connection = db_pool.getconn()
-    # face_image_service.recognition_detected_faces(
-    #     frame=frame,
-    #     timestamp=timestamp,
-    #     detected_faces=detected_faces,
-    #     recognition_threshold=recognition_threshold,
-    #     faceset_token=faceset_token,
-    #     tracker=tracker,
-    #     db_connection=db_connection
-    # )
+    print(len(detected_faces))
+
+    face_image_service.recognition_detected_faces(
+        frame=frame,
+        timestamp=timestamp,
+        detected_faces=detected_faces,
+        recognition_threshold=recognition_threshold,
+        faceset_token=faceset_token,
+        tracker=tracker,
+        db_connection=db_connection
+    )
 
     frame = draw_detected_faces(frame, detected_faces, recognition_threshold,
                                 timestamp)

@@ -7,6 +7,7 @@ import numpy as np
 import psycopg2
 from celery.signals import worker_process_init
 from log import logger
+from service.face_image_service import FaceImageService
 from service.face_management import FaceManagementService
 from storage_service import get_image_from_storage_service
 from milvus.client.exceptions import ConnectError
@@ -17,29 +18,29 @@ from db.repository.face_repository import save_face_tokens
 from domain.common import CommonResponse, Status
 from domain.face import Face, CompareFaceResponse
 
-model_instance = None
 face_management = FaceManagementService()
 db_pool = psycopg2.pool.ThreadedConnectionPool(
-    settings.min_connection_count,
-    settings.max_connection_count,
+    10,
+    10,
     "postgresql://postgres:changeme@localhost:5432/face_management"
 )
-face_image = None
+face_image = FaceImageService()
 
 
 def register_face(bucket_name: str, image_paths: List[str], person_id: str, faceset_tokens: List[str], created_by: str,
-                  enable_generate_mask_face: bool):
+                  enable_generate_mask_face: bool = False):
     responses = []
     try:
         # save to database
-        db_connection = None
         db_connection = db_pool.getconn()
         faces = []
         for image_path in image_paths:
-            image_name = os.path.basename(image_path)[9:]
+            person_name = image_path.split(".")[0]
+            image_name = image_path[:-4]
+            image_path = f"{person_id}/{image_path}"
             image = get_image_from_storage_service(bucket=bucket_name, file_name=image_path)
-            crop_base_image_path = os.path.splitext(image_path.replace("raw", "cropped"))[0]
-            logger.info(f"crop_base_image_path: {crop_base_image_path}")
+            crop_base_image_path = f"cropped/{person_name}"
+            print(f"crop_base_image_path: {crop_base_image_path}")
             result: CommonResponse = face_image.register_face(
                 image,
                 upload_image=True,
@@ -62,6 +63,7 @@ def register_face(bucket_name: str, image_paths: List[str], person_id: str, face
                 # responses.append(result_dicts)
 
         if len(faces) > 0:
+            print(f"Len face: {len(faces)} ---------------------------------------------------")
             success = save_face_tokens(
                 connection=db_connection,
                 faces=faces,
@@ -69,30 +71,47 @@ def register_face(bucket_name: str, image_paths: List[str], person_id: str, face
                 created_by=created_by
             )
             if not success:
-                logger.info("save face token failed")
+                print("save face token failed")
                 return CommonResponse(status=Status.FAILED,
                                       code="ERROR_916",
                                       message="Database Error").to_dict()
 
             for faceset_token in faceset_tokens:
                 face_tokens = [face.face_token for face in faces]
-                logger.info("Add face_tokens: {} to faceset: {}".format(face_tokens, faceset_token))
+                print("Add face_tokens: {} to faceset: {}".format(face_tokens, faceset_token))
                 face_management.add_face_tokens_to_faceset(
                     face_tokens=face_tokens,
                     feature_vectors=[face.feature_vector for face in faces],
                     faceset_token=faceset_token
                 )
+            print("----------------------------------------------------------------------------------------------")
     except Exception as e:
-        logger.info(e)
-        return CommonResponse(status=Status.FAILED, message=e.__class__.__name__, code="400").to_dict()
+        print(e)
+        # return CommonResponse(status=Status.FAILED, message=e.__class__.__name__, code="400").to_dict()
         # raise e
-    finally:
-        if db_connection is not None:
-            db_pool.putconn(db_connection)
-    return responses
+    # finally:
+    #     if db_connection is not None:
+    #         db_pool.putconn(db_connection)
+    # return responses
 
 
-def add_face_token_to_faceset(face_token: str, feature_vector: List[float], faceset_token: str) -> None:
-    logger.debug("Add face_token={} to faceset={}".format(face_token, faceset_token))
-    face_management.add_face_token_to_faceset(face_token, feature_vector, faceset_token)
-    return None
+folder_path = "/hdd/xu ly song song/paranell/app/dataset"
+faceset_token = "_c3770594291f452782520613dfeaa6c"
+# for image_name in os.listdir(folder_path):
+for image_name in ['Gupta']:
+    try:
+        print("\tRegistering: {}".format(image_name))
+        image_path = os.path.join(folder_path, image_name)
+        file_list = os.listdir(image_path)
+        register_face(
+            bucket_name="registration-faces",
+            person_id=image_name.split(".")[0],
+            faceset_tokens=[faceset_token],
+            image_paths=file_list,
+            created_by="dat"
+        )
+
+    except Exception as e:
+        print("cannot register image: {}".format(image_name))
+
+face_image.core_service.serving_service.triton_client.close()

@@ -28,7 +28,7 @@ def get_minio_client():
     )
 
 
-logger.info("Connected to Minio Server")
+print("Connected to Minio Server")
 
 get_minio_client()
 try:

@@ -31,7 +31,7 @@ def get_dates_from_date_range(
     delta_date = end_date - start_date
     for i in range(delta_date.days + 1):
         current_date = start_date + timedelta(days=i)
-        logger.info(
+        print(
             f"start_date: {start_date} | end_date: {end_date} | delta_date: {delta_date.days + 1} | current_date = {current_date}")
         history_faceset_token = f"{current_date.year}_{current_date.month}_{current_date.day}"
         history_faceset_tokens.append(history_faceset_token)
@@ -198,7 +198,6 @@ class FaceImageService:
             image=image,
             upload_cropped_image=True,
             base_image_path=base_crop_image_path,
-            verify=False
         )
         if len(detected_faces) < 1:
             return CommonResponse(status=Status.BAD_REQUEST, message="No face found", code="ERROR_914")
@@ -215,8 +214,8 @@ class FaceImageService:
                 image=cropped_face,
                 image_path=img_name
             )
-            logger.info(f"image_url: {image_url}")
-            logger.info(f"img_name: {img_name}")
+            print(f"image_url: {image_url}")
+            print(f"img_name: {img_name}")
             largest_face.face_image_url = image_url
 
         register_faces.append(largest_face)

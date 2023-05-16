@@ -48,8 +48,8 @@ class TritonServingService:
                 headers={'test': '1'},  # Not sure if this is necessary
                 compression_algorithm=None)
         except InferenceServerException as e:
-            logger.info("Triton Connection Refused")
-            logger.info(f"exception: {e}")
+            print("Triton Connection Refused")
+            print(f"exception: {e}")
             self.get_triton_client(triton_host=settings.triton_host)
             result = None
         return result

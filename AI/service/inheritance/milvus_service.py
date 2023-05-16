@@ -26,7 +26,7 @@ class MilvusService(FeatureVectorService):
             milvus = Milvus(host=self.settings.milvus_host, port=self.settings.milvus_port)
             return milvus
         except NotConnectError:
-            logger.info("Milvus connection refused")
+            print("Milvus connection refused")
             time.sleep(5)
             return None
 
@@ -59,7 +59,7 @@ class MilvusService(FeatureVectorService):
 
                 # present collection info
                 _, info = self.milvus.get_collection_info(collection_name)
-                logger.info(info)
+                print(info)
 
                 # Recommend to use IVF_FLAT if expected vector to be large enough, like 10000
                 # Else stick with FLAT by default, to gain 100% Recall
@@ -68,29 +68,29 @@ class MilvusService(FeatureVectorService):
                     _ = self.milvus.create_index(collection_name, IndexType.IVF_FLAT, ivf_param)
                 # describe index, get information of index
                 status = self.milvus.get_index_info(collection_name)
-                logger.info(status)
+                print(status)
 
     def remove_collection(self, collection_name):
         status, exist = self.milvus.has_collection(collection_name)
         if not exist:
-            logger.info("Milvus | collection: {} does not exist".format(collection_name))
+            print("Milvus | collection: {} does not exist".format(collection_name))
             return True
         else:
             status = self.milvus.drop_collection(collection_name)
-            logger.info("Milvus | collection: {} is removed".format(collection_name))
+            print("Milvus | collection: {} is removed".format(collection_name))
             return status.OK()
 
     def create_partition(self, collection_name, partition_tag):
         status, ok = self.milvus.has_partition(collection_name, partition_tag)
         if not ok:
-            logger.info("partition name: {} not found. Create new one.".format(partition_tag))
+            print("partition name: {} not found. Create new one.".format(partition_tag))
             self.milvus.create_partition(collection_name, partition_tag=partition_tag)
 
     def get_index_info(self, collection_name: str):
         if collection_name is None:
             raise InternalException("Collection name is empty")
         status, info = self.milvus.get_collection_stats(collection_name)
-        logger.info("Total amount of vectors in collection {} is {}".format(collection_name, info["row_count"]))
+        print("Total amount of vectors in collection {} is {}".format(collection_name, info["row_count"]))
 
     def search(self, query_vectors, top_k=1, collection_name=None, partition_tags=None):
         """
@@ -105,7 +105,7 @@ class MilvusService(FeatureVectorService):
             raise InternalException("Collection name is empty")
         status, ok = self.milvus.has_collection(collection_name)
         if not ok:
-            logger.info("collection not found")
+            print("collection not found")
             raise BadRequestException(error_code.FACESET_NOTFOUND, "faceset_token", collection_name)
         param = {
             'collection_name': collection_name,
@@ -132,7 +132,7 @@ class MilvusService(FeatureVectorService):
             # indicate search result
             return results.id_array, results.distance_array
         else:
-            logger.info("Search failed. {}".format(status))
+            print("Search failed. {}".format(status))
 
     def insert_vector(self, vector, face_id=None, collection_name=None, partition_tag=None):
         """
@@ -165,7 +165,7 @@ class MilvusService(FeatureVectorService):
 
         status, ok = self.milvus.has_collection(collection_name)
         if not ok:
-            logger.info("collection not found, create a new collection with collection_name={}".format(collection_name))
+            print("collection not found, create a new collection with collection_name={}".format(collection_name))
             self.create_collection(collection_name)
 
         if partition_tag is not None:

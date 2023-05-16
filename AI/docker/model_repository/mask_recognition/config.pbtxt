@@ -1,0 +1,27 @@
+name: "mask_recognition"
+platform: "onnxruntime_onnx"
+input [
+  {
+    name: "0"
+    data_type: TYPE_FP32
+    format: FORMAT_NONE
+    dims: [-1, 3, 112, 112 ]
+    is_shape_tensor: false
+    allow_ragged_batch: false
+  }
+]
+output [
+  {
+    name: "926"
+    data_type: TYPE_FP32
+    dims: [1, 512]
+  }
+]
+
+optimization { execution_accelerators {
+  gpu_execution_accelerator : [ {
+    name : "tensorrt"
+    parameters { key: "precision_mode" value: "FP16" }
+    parameters { key: "max_workspace_size_bytes" value: "2147483648" }
+    }]
+}}
