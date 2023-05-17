@@ -15,7 +15,9 @@ import time
 settings = get_app_settings()
 
 
-cap = cv2.VideoCapture("daniels.mp4")
+# cap = cv2.VideoCapture("videos/daniels.mp4")
+cap = cv2.VideoCapture("test_dat.mp4")
+
 db_pool = psycopg2.pool.ThreadedConnectionPool(
     settings.min_connection_count,
     settings.max_connection_count,
@@ -57,8 +59,7 @@ while True:
         db_connection=db_connection
     )
 
-    frame = draw_detected_faces(frame, detected_faces, recognition_threshold,
-                                timestamp)
+    frame = draw_detected_faces(frame, detected_faces, recognition_threshold)
 
     frame = cv2.resize(frame, (1280, 720), cv2.INTER_AREA)
     cv2.imshow("output", frame)

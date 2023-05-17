@@ -33,7 +33,7 @@ def visualize_landmark(image: np.ndarray, landmark: np.ndarray):
         cv2.circle(image, (x, y), radius=2, color=color, thickness=-1)
 
 
-def draw_detected_faces(frame: np.ndarray, detected_faces: List[FaceInfo], recognize_threshold: float, timestamp: int):
+def draw_detected_faces(frame: np.ndarray, detected_faces: List[FaceInfo], recognize_threshold: float):
     frame_height, frame_width, _ = frame.shape
     for face_info in detected_faces:
         box_color = (0, 0, 255)
