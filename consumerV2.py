@@ -1,3 +1,4 @@
+import threading
 from confluent_kafka import Consumer, Producer
 import face_recognition
 import pickle
@@ -26,7 +27,7 @@ class ConsumerThread:
         self.authorization = authorization
         self.true_false = False # don't recognise face then recognise
         self.settings = get_app_settings()
-
+        
     ######new_code########
     def SingleShotProducer(self, name, topic, site_number):
         message = "Warning! UnKnown person at " + topic
@@ -114,7 +115,6 @@ class ConsumerThread:
                 nparr = np.frombuffer(event.value(), np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 # img = event.value()
-                # print(type(img))
                 #run on different thread, machine 
                 headers = event.headers()
                 original = headers[0][1].decode('utf-8')
@@ -130,15 +130,13 @@ class ConsumerThread:
         # Return None if no number is found
         return None
 
-    def face_recognition(self,image, original_site):
-        site_number = self.extract_number(original_site)
+    def face_recognition(self,image):
         db_pool = psycopg2.pool.ThreadedConnectionPool(
         self.settings.min_connection_count,
         self.settings.max_connection_count,
         # "postgresql://postgres:changeme@localhost:5432/face_management"
         "postgresql://postgres:123@localhost:5432/postgres"
         )
-
         db_connection = db_pool.getconn()
         face_image_service = FaceImageService()
         recognition_threshold = 75
@@ -149,7 +147,6 @@ class ConsumerThread:
 
         sent_event_recognized_track_ids = []
         sent_event_unknown_track_ids = []
-        
         timestamp = int(time.time())
         detected_faces, log_message = face_image_service.detect_faces(
             image=frame,
@@ -157,7 +154,6 @@ class ConsumerThread:
             upload_cropped_image=False,
             base_image_path="test"
         )
-        
         frame_height, frame_width, _ = frame.shape
 
         print(len(detected_faces))
@@ -177,25 +173,14 @@ class ConsumerThread:
         
         frame,text = cv2.resize(frame, (1280, 720), cv2.INTER_AREA)
         name = text
-        if name is None:
-            name = "Unknown"
-        # update the list of names
 
         if self.absence_status[name] == False:
             # self.absence_status[name] = True
             self.true_false = False
             timestamp = datetime.datetime.now()
-            self.log_entrance_event(employee_name=name, time_at_entrance=timestamp, image = frame, site_number=site_number)
+            self.log_entrance_event(employee_name=name, time_at_entrance=timestamp, image = rgb, site_number=site_number)
             self.log_absence(employee_name=name, site_number=site_number)
             self.SingleShotProducer(name, original_site, site_number=site_number)
-
         elif self.true_false == False:
             self.true_false = True
             self.SingleShotProducer("Unknown", original_site, site_number=site_number)
-
-# https://stackoverflow.com/questions/49493493/python-store-cv-image-in-mongodb-gridfs
-
-
-# UPDATE absense
-# SET absense_status = True
-# WHERE employee_name = "Nhatcao";
